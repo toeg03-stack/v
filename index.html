@@ -3,94 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>محمل الفيديوهات الذكي</title>
+    <title>محمل فيديوهات يوتيوب</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; text-align: center; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        h1 { color: #ff0000; }
-        input { width: 80%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; outline: none; transition: 0.3s; }
-        input:focus { border-color: #ff0000; }
-        button { padding: 12px 25px; background: #ff0000; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        #result { margin-top: 30px; display: none; }
-        .video-card { display: flex; align-items: center; gap: 20px; background: #fafafa; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: right; }
-        .video-card img { width: 150px; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
-        .download-btn { background: #28a745; color: white; text-decoration: none; padding: 5px 15px; border-radius: 5px; font-size: 14px; }
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f4f4f4; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        input { width: 80%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        button { padding: 10px 20px; background: #ff0000; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        #result { margin-top: 20px; text-align: right; }
+        .video-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; }
+        .thumb { width: 100%; border-radius: 5px; }
+        .btn-download { display: inline-block; padding: 8px 15px; background: #28a745; color: white; text-decoration: none; margin: 5px; border-radius: 4px; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>تحميل فيديو أونلاين</h1>
-    <p>ضع رابط الفيديو بالأسفل للحصول على جودات مختلفة</p>
-    
-    <input type="text" id="urlInput" placeholder="https://www.youtube.com/watch?v=...">
-    <button onclick="analyzeVideo()">تحليل الفيديو</button>
+    <h2>تحميل من يوتيوب</h2>
+    <input type="text" id="videoUrl" placeholder="ضع رابط الفيديو هنا...">
+    <button onclick="downloadVideo()">جلب الروابط</button>
 
-    <div id="loading" style="display:none;">جاري جلب الروابط...</div>
-
-    <div id="result">
-        <div class="video-card">
-            <img id="thumb" src="" alt="Thumbnail">
-            <div>
-                <h3 id="videoTitle"></h3>
-                <p id="duration"></p>
-            </div>
-        </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>الجودة</th>
-                    <th>الصيغة</th>
-                    <th>الحجم</th>
-                    <th>تحميل</th>
-                </tr>
-            </thead>
-            <tbody id="formatsTable"></tbody>
-        </table>
-    </div>
+    <div id="result"></div>
 </div>
 
 <script>
-    async function analyzeVideo() {
-        const url = document.getElementById('urlInput').value;
-        if (!url) return alert("من فضلك ضع رابطاً!");
+    async function downloadVideo() {
+        const urlInput = document.getElementById('videoUrl').value;
+        const resultDiv = document.getElementById('result');
 
-        document.getElementById('loading').style.display = 'block';
-        document.getElementById('result').style.display = 'none';
+        if (!urlInput) return alert("من فضلك ضع الرابط");
+
+        resultDiv.innerHTML = "<p>جاري جلب البيانات من السيرفر...</p>";
 
         try {
-            // ملاحظة: عند الرفع على Vercel، المسار سيكون /api تلقائياً
-            const response = await fetch(`/api?url=${encodeURIComponent(url)}`);
+            // استدعاء السيرفر الخاص بك على Vercel
+            const response = await fetch(`/api/index?url=${encodeURIComponent(urlInput)}`);
             const data = await response.json();
 
-            if (data.error) throw new Error(data.error);
-
-            document.getElementById('videoTitle').innerText = data.title;
-            document.getElementById('thumb').src = data.thumbnail;
-            document.getElementById('duration').innerText = `المسافة: ${data.duration} ثانية`;
-
-            const tableBody = document.getElementById('formatsTable');
-            tableBody.innerHTML = '';
-
-            data.formats.forEach(f => {
-                const row = `<tr>
-                    <td>${f.quality}</td>
-                    <td>${f.extension}</td>
-                    <td>${f.size}</td>
-                    <td><a href="${f.url}" class="download-btn" target="_blank" download>تحميل</a></td>
-                </tr>`;
-                tableBody.innerHTML += row;
-            });
-
-            document.getElementById('result').style.display = 'block';
-        } catch (err) {
-            alert("خطأ: " + err.message);
-        } finally {
-            document.getElementById('loading').style.display = 'none';
+            if (data.id || data.status === "ok") {
+                renderResult(data);
+            } else {
+                resultDiv.innerHTML = "<p style='color:red;'>عذراً، لم نجد روابط لهذا الفيديو.</p>";
+            }
+        } catch (error) {
+            resultDiv.innerHTML = "<p style='color:red;'>حدث خطأ في الاتصال. تأكد من رفع الكود لـ Vercel.</p>";
         }
+    }
+
+    function renderResult(data) {
+        const resultDiv = document.getElementById('result');
+        const title = data.title || "فيديو يوتيوب";
+        const thumb = data.thumbnail || data.thumb;
+        const links = data.link || {}; // الـ API يعيد الروابط في كائن link
+
+        let linksHtml = "";
+        
+        // تحويل كائن الروابط إلى أزرار
+        Object.entries(links).forEach(([id, info]) => {
+            // info[0] = الرابط، info[1] = الصيغة، info[3] = الجودة
+            linksHtml += `
+                <a href="${info[0]}" target="_blank" class="btn-download">
+                    تحميل ${info[1].toUpperCase()} (${info[3] || id})
+                </a>`;
+        });
+
+        resultDiv.innerHTML = `
+            <div class="video-card">
+                <h4>${title}</h4>
+                <img src="${thumb}" class="thumb">
+                <div style="margin-top:15px;">
+                    ${linksHtml}
+                </div>
+            </div>
+        `;
     }
 </script>
 
