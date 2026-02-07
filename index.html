@@ -50,32 +50,50 @@
     }
 
     function renderResult(data) {
-        const resultDiv = document.getElementById('result');
-        const title = data.title || "فيديو يوتيوب";
-        const thumb = data.thumbnail || data.thumb;
-        const links = data.link || {}; // الـ API يعيد الروابط في كائن link
+    const resultDiv = document.getElementById('result');
+    const title = data.title || "فيديو يوتيوب";
+    const thumb = data.thumbnail || data.thumb;
+    
+    // التأكد من وجود الروابط بأكثر من طريقة تجنباً للخطأ
+    const links = data.link || data.links || null;
 
-        let linksHtml = "";
-        
-        // تحويل كائن الروابط إلى أزرار
-        Object.entries(links).forEach(([id, info]) => {
-            // info[0] = الرابط، info[1] = الصيغة، info[3] = الجودة
-            linksHtml += `
-                <a href="${info[0]}" target="_blank" class="btn-download">
-                    تحميل ${info[1].toUpperCase()} (${info[3] || id})
-                </a>`;
-        });
-
-        resultDiv.innerHTML = `
-            <div class="video-card">
-                <h4>${title}</h4>
-                <img src="${thumb}" class="thumb">
-                <div style="margin-top:15px;">
-                    ${linksHtml}
-                </div>
-            </div>
-        `;
+    if (!links || typeof links !== 'object') {
+        resultDiv.innerHTML = "<p style='color:red;'>عذراً، لم نتمكن من استخراج روابط التحميل لهذا الفيديو حالياً.</p>";
+        return;
     }
+
+    let linksHtml = "";
+    
+    // تحويل الكائن إلى مصفوفة ثم الدوران حولها بأمان
+    Object.keys(links).forEach((key) => {
+        const info = links[key];
+        // التأكد أن info مصفوفة ولها رابط في الخانة الأولى
+        if (Array.isArray(info) && info[0]) {
+            const downloadUrl = info[0];
+            const extension = info[1] || "File";
+            const quality = info[3] || key;
+            
+            linksHtml += `
+                <a href="${downloadUrl}" target="_blank" class="btn-download">
+                    تحميل ${extension.toUpperCase()} (${quality})
+                </a>`;
+        }
+    });
+
+    if (linksHtml === "") {
+        linksHtml = "<p>لا توجد جودات متاحة للتحميل حالياً.</p>";
+    }
+
+    resultDiv.innerHTML = `
+        <div class="video-card">
+            <h4>${title}</h4>
+            <img src="${thumb}" class="thumb" style="max-width:100%; height:auto;">
+            <div style="margin-top:15px;">
+                ${linksHtml}
+            </div>
+        </div>
+    `;
+}
 </script>
 
 </body>
