@@ -14,7 +14,22 @@ module.exports = async (req, res) => {
         const cookiesData = JSON.parse(fs.readFileSync(cookiesPath, 'utf8'));
 
         // إعداد العميل
+        try {
+        const cookiesPath = path.join(process.cwd(), 'cookies.json');
+        const cookiesData = JSON.parse(fs.readFileSync(cookiesPath, 'utf8'));
+
+        // إجبار الوكيل على استخدام الكوكيز بشكل صارم
         const agent = ytdl.createAgent(cookiesData); 
+        
+        // جلب البيانات مع تعطيل طلبات التحقق الإضافية التي قد تسبب حظراً
+        const info = await ytdl.getInfo(url, { 
+            agent,
+            requestOptions: {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
+            }
+        });
         
         // جلب البيانات مع استخدام الـ agent
         const info = await ytdl.getInfo(url, { agent });
