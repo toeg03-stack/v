@@ -1,9 +1,14 @@
 const fetch = require('node-fetch');
 
 module.exports = async (req, res) => {
-    // إعدادات الوصول (CORS)
+    // إعدادات السماح بالاتصال (CORS) ليعمل مع واجهة موقعك
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
 
     const { url } = req.query;
 
@@ -11,7 +16,7 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: "الرجاء إدخال رابط فيديو يوتيوب" });
     }
 
-    // الرابط الذي حصلت عليه من RapidAPI
+    // بناء رابط الطلب لـ RapidAPI
     const apiUrl = `https://youtube-info-download-api.p.rapidapi.com/ajax/api.php?function=i&u=${encodeURIComponent(url)}`;
 
     const options = {
@@ -24,11 +29,16 @@ module.exports = async (req, res) => {
 
     try {
         const response = await fetch(apiUrl, options);
-        const data = await response.json();
+        
+        // التحقق من حالة الاستجابة
+        if (!response.ok) {
+            throw new Error(`RapidAPI Error: ${response.statusText}`);
+        }
 
-        // إرسال البيانات النهائية لموقعك
+        const data = await response.json();
         res.status(200).json(data);
     } catch (error) {
-        res.status(500).json({ error: "فشل في جلب البيانات من السيرفر" });
+        console.error("Server Error:", error);
+        res.status(500).json({ error: "حدث خطأ أثناء جلب البيانات من السيرفر" });
     }
 };
