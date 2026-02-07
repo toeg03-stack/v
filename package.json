@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "main": "api/index.js",
   "dependencies": {
-    "@distube/ytdl-core": "latest",
-    "cors": "^2.8.5"
+    "@distube/ytdl-core": "latest" 
   }
 }
