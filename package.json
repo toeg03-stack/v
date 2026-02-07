@@ -1,8 +1,8 @@
 {
-  "name": "pro-video-downloader",
+  "name": "yt-downloader-rapidapi",
   "version": "1.0.0",
   "main": "api/index.js",
   "dependencies": {
-    "@distube/ytdl-core": "latest" 
+    "node-fetch": "^2.6.7"
   }
 }
