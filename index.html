@@ -1,0 +1,45 @@
+<div class="container">
+    <input type="text" id="videoUrl" placeholder="ضع رابط الفيديو هنا...">
+    <button onclick="fetchVideo()">تحليل الرابط</button>
+
+    <div id="result" style="display:none;">
+        <h3 id="title"></h3>
+        <img id="thumb" width="200">
+        <table border="1" id="formatTable">
+            <thead>
+                <tr>
+                    <th>الجودة</th>
+                    <th>الصيغة</th>
+                    <th>تحميل</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+async function fetchVideo() {
+    const url = document.getElementById('videoUrl').value;
+    const res = await fetch(`/api/extract?url=${url}`);
+    const data = await response.json();
+
+    if(data.error) return alert(data.error);
+
+    document.getElementById('result').style.display = 'block';
+    document.getElementById('title').innerText = data.title;
+    document.getElementById('thumb').src = data.thumbnail;
+
+    const tbody = document.querySelector('#formatTable tbody');
+    tbody.innerHTML = ''; // مسح النتائج السابقة
+
+    data.formats.forEach(f => {
+        const row = `<tr>
+            <td>${f.quality}</td>
+            <td>${f.extension}</td>
+            <td><a href="${f.url}" target="_blank">اضغط للتحميل</a></td>
+        </tr>`;
+        tbody.innerHTML += row;
+    });
+}
+</script>
