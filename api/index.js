@@ -1,39 +1,34 @@
+const fetch = require('node-fetch');
+
 module.exports = async (req, res) => {
+    // إعدادات الوصول (CORS)
     res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+
     const { url } = req.query;
 
-    if (!url) return res.status(400).json({ error: "الرابط مطلوب" });
+    if (!url) {
+        return res.status(400).json({ error: "الرجاء إدخال رابط فيديو يوتيوب" });
+    }
 
-    // استخراج الـ ID من الرابط
-    const videoId = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop();
+    // الرابط الذي حصلت عليه من RapidAPI
+    const apiUrl = `https://youtube-info-download-api.p.rapidapi.com/ajax/api.php?function=i&u=${encodeURIComponent(url)}`;
 
     const options = {
         method: 'GET',
         headers: {
-            'x-rapidapi-key': 'ضع_هنا_مفتاحك_الخاص', // سأخبرك كيف تحصل عليه بالأسفل
-            'x-rapidapi-host': 'youtube-video-download-info.p.rapidapi.com'
+            'x-rapidapi-key': 'efa1de6729mshb28119d60dbc522p124ef9jsn1621c61e3fbd',
+            'x-rapidapi-host': 'youtube-info-download-api.p.rapidapi.com'
         }
     };
 
     try {
-        const response = await fetch(`https://youtube-video-download-info.p.rapidapi.com/dl?id=${videoId}`, options);
+        const response = await fetch(apiUrl, options);
         const data = await response.json();
 
-        // هنا نقوم بتوحيد شكل البيانات ليتناسب مع موقعك
-        if (data.status === "ok") {
-            res.status(200).json({
-                title: data.title,
-                thumbnail: data.thumb,
-                formats: Object.entries(data.link).map(([quality, info]) => ({
-                    quality: info[3] || quality, // الجودة (مثل 720p)
-                    extension: info[1],           // الصيغة (مثل mp4)
-                    url: info[0]                  // رابط التحميل المباشر
-                }))
-            });
-        } else {
-            throw new Error("فشل الـ API في جلب الروابط");
-        }
+        // إرسال البيانات النهائية لموقعك
+        res.status(200).json(data);
     } catch (error) {
-        res.status(500).json({ error: "حدث خطأ: " + error.message });
+        res.status(500).json({ error: "فشل في جلب البيانات من السيرفر" });
     }
 };
